@@ -4,12 +4,12 @@ var mailConfig;
 if (process.env.NODE_ENV === "production") {
   // all emails are delivered to destination
   mailConfig = {
-    host: "smtp.sennerby.se",
+    host: "smtp.migadu.com",
     port: 587,
     auth: {
-      user: "noreply",
+      user: "noreply@sennerby.se",
       pass: crypt.decrypt(
-        "b4dc5ea33bce7a6058cbe280171eb5a1:6a5c0008972763575f56e7aa5e966920"
+        "660b257fe974cf448ba637afc6ba6894:433388a9c6ecf20c0936deed3fba9501"
       )
     }
   };

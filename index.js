@@ -11,7 +11,7 @@ const file = "./data/latestListings.json";
 const searchUrl = "/sv/search/apartments/osten/berlin/list?region=Berlin-";
 const areas = ["Kreuzberg", "Friedrichshain", "Mitte"];
 
-const handleResponse = ($, area) => {
+const handleResponse = ($, area, currentTime) => {
   const items = $("ul.list-links").children();
   const listings = {};
   items.each((i, elem) => {
@@ -20,7 +20,13 @@ const handleResponse = ($, area) => {
     const priceInt = parseInt(price.replace(" €", ""), 10);
     const url = `${baseUrl}${$("a", elem).attr("href")}`;
     if (priceInt <= 1000) {
-      listings[elem.attribs.id] = { price, url, area, size };
+      listings[elem.attribs.id] = {
+        price,
+        url,
+        area,
+        size,
+        latestSeen: currentTime
+      };
     }
   });
   return listings;
@@ -36,6 +42,7 @@ createHtmlMessage = context => {
 };
 
 const main = async () => {
+  const currentTime = new Date().toISOString();
   let savedListings;
   try {
     savedListings = await jsonfile.readFile(file);
@@ -46,16 +53,21 @@ const main = async () => {
   await Promise.all(
     areas.map(async area => {
       const body = await request(`${baseUrl}${searchUrl}${area}`);
-      const listings = handleResponse(cheerio.load(body), area);
+      const listings = handleResponse(cheerio.load(body), area, currentTime);
       latestListings = { ...latestListings, ...listings };
     })
   );
-  await jsonfile.writeFile(file, latestListings, { spaces: 2 });
+  await jsonfile.writeFile(
+    file,
+    { ...savedListings, ...latestListings },
+    { spaces: 2 }
+  );
   const difference = _.difference(
     _.keys(latestListings),
     _.keys(savedListings)
   );
   if (!_.isEmpty(difference)) {
+    console.log("Difference found, sending mail!");
     const message = createHtmlMessage({
       header: "New listings:",
       listings: latestListings
@@ -64,4 +76,4 @@ const main = async () => {
   }
 };
 
-main();
+setInterval(main, 900000); // every 15 min
