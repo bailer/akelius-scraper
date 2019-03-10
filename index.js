@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 const request = require("request-promise-native");
 const cheerio = require("cheerio");
 const jsonfile = require("jsonfile");
@@ -26,7 +27,10 @@ const handleResponse = ($, area) => {
 };
 
 createHtmlMessage = context => {
-  const source = fs.readFileSync("./src/templates/newListings.hbs", "utf8");
+  const source = fs.readFileSync(
+    path.join(__dirname, "./src/templates/newListings.hbs"),
+    "utf8"
+  );
   var template = handlebars.compile(source);
   return template(context);
 };
