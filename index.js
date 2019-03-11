@@ -57,6 +57,11 @@ const main = async () => {
       latestListings = { ...latestListings, ...listings };
     })
   );
+  try {
+    fs.mkdirSync(path.join(__dirname, "./data"));
+  } catch (err) {
+    if (err.code !== "EEXIST") throw err;
+  }
   await jsonfile.writeFile(
     file,
     { ...savedListings, ...latestListings },
@@ -77,3 +82,4 @@ const main = async () => {
 };
 
 setInterval(main, 900000); // every 15 min
+main();
