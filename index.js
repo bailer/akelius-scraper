@@ -42,42 +42,47 @@ createHtmlMessage = context => {
 };
 
 const main = async () => {
-  const currentTime = new Date().toISOString();
-  let savedListings;
   try {
-    savedListings = await jsonfile.readFile(file);
+    const currentTime = new Date().toISOString();
+    let savedListings;
+    try {
+      savedListings = await jsonfile.readFile(file);
+    } catch (error) {
+      savedListings = {};
+    }
+    let latestListings = {};
+    await Promise.all(
+      areas.map(async area => {
+        const body = await request(`${baseUrl}${searchUrl}${area}`);
+        const listings = handleResponse(cheerio.load(body), area, currentTime);
+        latestListings = { ...latestListings, ...listings };
+      })
+    );
+    try {
+      fs.mkdirSync(path.join(__dirname, "./data"));
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+    }
+    await jsonfile.writeFile(
+      file,
+      { ...savedListings, ...latestListings },
+      { spaces: 2 }
+    );
+    const difference = _.difference(
+      _.keys(latestListings),
+      _.keys(savedListings)
+    );
+    if (!_.isEmpty(difference)) {
+      console.log("Difference found, sending mail!");
+      const message = createHtmlMessage({
+        header: "New listings:",
+        listings: latestListings
+      });
+      sendEmail("jakob@sennerby.se", "New listings on Akelius", message);
+    }
   } catch (error) {
-    savedListings = {};
-  }
-  let latestListings = {};
-  await Promise.all(
-    areas.map(async area => {
-      const body = await request(`${baseUrl}${searchUrl}${area}`);
-      const listings = handleResponse(cheerio.load(body), area, currentTime);
-      latestListings = { ...latestListings, ...listings };
-    })
-  );
-  try {
-    fs.mkdirSync(path.join(__dirname, "./data"));
-  } catch (err) {
-    if (err.code !== "EEXIST") throw err;
-  }
-  await jsonfile.writeFile(
-    file,
-    { ...savedListings, ...latestListings },
-    { spaces: 2 }
-  );
-  const difference = _.difference(
-    _.keys(latestListings),
-    _.keys(savedListings)
-  );
-  if (!_.isEmpty(difference)) {
-    console.log("Difference found, sending mail!");
-    const message = createHtmlMessage({
-      header: "New listings:",
-      listings: latestListings
-    });
-    sendEmail("jakob@sennerby.se", "New listings on Akelius", message);
+    console.log(error);
+    return;
   }
 };
 
