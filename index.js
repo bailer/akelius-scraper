@@ -9,7 +9,7 @@ const handlebars = require("handlebars");
 const baseUrl = "https://www.akelius.de";
 const file = "./data/latestListings.json";
 const searchUrl = "/sv/search/apartments/osten/berlin/list?region=Berlin-";
-const areas = ["Kreuzberg", "Friedrichshain", "Mitte"];
+const areas = ["Kreuzberg", "Friedrichshain", "Mitte", "Neukölln"];
 
 const handleResponse = ($, area, currentTime) => {
   const items = $("ul.list-links").children();
@@ -53,9 +53,18 @@ const main = async () => {
     let latestListings = {};
     await Promise.all(
       areas.map(async area => {
-        const body = await request(`${baseUrl}${searchUrl}${area}`);
-        const listings = handleResponse(cheerio.load(body), area, currentTime);
-        latestListings = { ...latestListings, ...listings };
+        try {
+          const body = await request(`${baseUrl}${searchUrl}${area}`);
+          const listings = handleResponse(
+            cheerio.load(body),
+            area,
+            currentTime
+          );
+          latestListings = { ...latestListings, ...listings };
+        } catch (error) {
+          console.log(`Failed fetching for ${area}`);
+          console.log(error);
+        }
       })
     );
     try {
