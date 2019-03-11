@@ -54,7 +54,9 @@ const main = async () => {
     await Promise.all(
       areas.map(async area => {
         try {
-          const body = await request(`${baseUrl}${searchUrl}${area}`);
+          const body = await request(
+            encodeURI(`${baseUrl}${searchUrl}${area}`)
+          );
           const listings = handleResponse(
             cheerio.load(body),
             area,
@@ -62,8 +64,7 @@ const main = async () => {
           );
           latestListings = { ...latestListings, ...listings };
         } catch (error) {
-          console.log(`Failed fetching for ${area}`);
-          console.log(error);
+          console.warn(`Failed fetching for ${area}`, error);
         }
       })
     );
@@ -82,7 +83,7 @@ const main = async () => {
       _.keys(savedListings)
     );
     if (!_.isEmpty(difference)) {
-      console.log("Difference found, sending mail!");
+      console.info("Difference found, sending mail!");
       const message = createHtmlMessage({
         header: "New listings:",
         listings: latestListings
@@ -90,7 +91,7 @@ const main = async () => {
       sendEmail("jakob@sennerby.se", "New listings on Akelius", message);
     }
   } catch (error) {
-    console.log(error);
+    console.warn(error);
     return;
   }
 };
