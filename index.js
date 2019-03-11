@@ -89,6 +89,8 @@ const main = async () => {
         listings: latestListings
       });
       sendEmail("jakob@sennerby.se", "New listings on Akelius", message);
+    } else {
+      console.info("No difference found, checking again in 15 min");
     }
   } catch (error) {
     console.warn(error);
